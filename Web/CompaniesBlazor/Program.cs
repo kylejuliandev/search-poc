@@ -1,6 +1,5 @@
 using CompaniesBlazor;
 using CompaniesRpc;
-using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -11,16 +10,11 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 var backendOrigin = builder.Configuration["BackendOrigin"]!;
 
-builder.Services.AddSingleton<Greeter.GreeterClient>((_) =>
-{
-    var channel = GrpcChannel.ForAddress(
-        backendOrigin,
-        new GrpcChannelOptions
-        {
-            HttpHandler = new GrpcWebHandler(new HttpClientHandler())
-        });
-
-    return new Greeter.GreeterClient(channel);
-});
+builder.Services
+    .AddGrpcClient<Greeter.GreeterClient>(options =>
+    {
+        options.Address = new Uri(backendOrigin);
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
 
 await builder.Build().RunAsync();
