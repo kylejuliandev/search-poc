@@ -1,0 +1,36 @@
+﻿@page "/"
+@using CompaniesRpc
+@using Grpc.Core
+@inject Greeter.GreeterClient GreeterRpc
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<p>Name</p>
+<input @bind-value="@_name"></input>
+<button class="btn btn-primary" @onclick="async () => await SayHelloAsync()"></button>
+
+@if(_result is not null) {
+	<p>@_result</p>
+}
+
+@code {
+	private string? _name;
+
+	private string? _result;
+
+	private async Task SayHelloAsync()
+	{
+		var request = new HelloRequest();
+		request.Name = _name ?? "No name";
+
+		var options = new CallOptions();
+
+		var result = await GreeterRpc.SayHelloAsync(request, options);
+
+		_result = result.Message;
+	}
+}
