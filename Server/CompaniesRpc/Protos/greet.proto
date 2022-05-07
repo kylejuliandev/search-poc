@@ -15,11 +15,19 @@ service Greeter {
 // The request message containing the user's name.
 message CustomerRequest {
 	string searchText = 1;
+	PaginationSettingsRpc pageSettings = 2;
 }
 
 // The response message containing the greetings.
 message CustomerReply {
   repeated CustomerRpc customers = 1;
+  int32 totalCount = 2;
+  bool hasMore = 3;
+}
+
+message PaginationSettingsRpc {
+	int32 pageNumber = 1;
+	int32 pageSize = 2;
 }
 
 message CustomerRpc {

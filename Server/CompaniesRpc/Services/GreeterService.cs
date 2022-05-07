@@ -20,19 +20,9 @@ public class GreeterService : Greeter.GreeterBase
     {
         var query = new SearchOptions
         {
-            IncludeTotalCount = true
+            Size = request.PageSettings.PageSize + 1,
+            Skip = request.PageSettings.PageNumber * request.PageSettings.PageSize
         };
-
-        //if (orderDirection is not null && orderByProperties is not null)
-        //{
-        //    foreach (var prop in orderByProperties)
-        //    {
-        //        var direction = orderDirection == OrderDirection.Ascending ? "asc" : "desc";
-        //        var orderBy = $"{prop} {direction}";
-
-        //        query.OrderBy.Add(orderBy);
-        //    }
-        //}
 
         var searchText = request.SearchText;
         searchText = string.IsNullOrEmpty(searchText) ? "*" : searchText;
@@ -40,7 +30,9 @@ public class GreeterService : Greeter.GreeterBase
         var response = await _client.SearchAsync<Customer>(searchText, query);
         var reply = new CustomerReply();
 
-        await foreach (var cust in response.Value.GetResultsAsync())
+        var results = await response.Value.GetResultsAsync().ToArrayAsync();
+
+        foreach (var cust in results.Take(request.PageSettings.PageSize))
         {
             reply.Customers.Add(new CustomerRpc
             {
@@ -53,6 +45,9 @@ public class GreeterService : Greeter.GreeterBase
                 LastedInvitedOn = cust.Document.LatestInvitedOn.ToUniversalTime().ToTimestamp()
             });
         }
+
+        reply.TotalCount = results.Length;
+        reply.HasMore = results.Length > request.PageSettings.PageSize;
 
         return reply;
     }
