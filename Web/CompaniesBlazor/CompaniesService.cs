@@ -38,6 +38,31 @@ public class CompaniesService
         }
     }
 
+    public async Task<string[]> GetSuggestedCustomersAsync(string? searchText)
+    {
+        if (string.IsNullOrEmpty(searchText)) return Array.Empty<string>();
+
+        var queryParams = new Dictionary<string, string>
+        {
+            { "searchText", searchText }
+        };
+
+        var queryString = ToQueryString(queryParams);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"api/suggest-customer{queryString}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<SuggestCustomerResponse>();
+            return result?.SuggestedCustomers.ToArray() ?? Array.Empty<string>();
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     private static string ToQueryString(IDictionary<string, string> queryParams)
     {
         var mappedQueryParams = queryParams.Select((kvp) => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}");
@@ -50,6 +75,11 @@ public class CustomerResponse
     public IEnumerable<Customer> Customers { get; set; }
 
     public bool HasMore { get; set; }
+}
+
+public class SuggestCustomerResponse
+{
+    public IEnumerable<string> SuggestedCustomers { get; set; }
 }
 
 public class Customer

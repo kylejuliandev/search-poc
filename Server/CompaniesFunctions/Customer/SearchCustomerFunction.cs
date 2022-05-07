@@ -5,11 +5,11 @@ using Microsoft.Extensions.Azure;
 
 namespace CompaniesFunctions.Customer;
 
-public class GetCustomerFunction
+public class SearchCustomerFunction
 {
     private readonly SearchClient _client;
 
-    public GetCustomerFunction(IAzureClientFactory<SearchClient> searchFactory)
+    public SearchCustomerFunction(IAzureClientFactory<SearchClient> searchFactory)
     {
         _client = searchFactory.CreateClient("CustomerSearchClient");
     }
@@ -26,7 +26,8 @@ public class GetCustomerFunction
         var query = new SearchOptions
         {
             Size = pageSize + 1,
-            Skip = pageNumber * pageSize
+            Skip = pageNumber * pageSize,
+            QueryType = Azure.Search.Documents.Models.SearchQueryType.Simple
         };
 
         searchText = string.IsNullOrEmpty(searchText) ? "*" : searchText;

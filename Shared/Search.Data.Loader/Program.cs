@@ -62,11 +62,13 @@ catch (RequestFailedException e) when (e.Status == 404)
     AnsiConsole.MarkupLine("[yellow]Index does not exist[/]");
 }
 
+AnsiConsole.MarkupLine("[green]Creating index[/]");
 var fieldBuilder = new FieldBuilder();
 var searchFields = fieldBuilder.Build(typeof(Customer));
-
-AnsiConsole.MarkupLine("[green]Creating index[/]");
+var suggester = new SearchSuggester("sg-names", new[] { nameof(Customer.FirstName), nameof(Customer.LastName) });
 var definition = new SearchIndex(custIndex, searchFields);
+definition.Suggesters.Add(suggester);
+
 await indexClient.CreateOrUpdateIndexAsync(definition);
 
 var batch = IndexDocumentsBatch.Create<Customer>();

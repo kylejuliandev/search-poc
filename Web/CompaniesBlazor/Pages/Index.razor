@@ -4,8 +4,20 @@
 <PageTitle>Index</PageTitle>
 
 <div class="container">
-	<input class="form-control" @bind="_searchText" @oninput="async (e) => await OnInput(e)"
+	<input class="form-control" type="text" @bind="_searchText" @oninput="async (e) => await OnInput(e)"
 		placeholder="Enter search text here"/>
+
+	<div>
+		@foreach (var suggestion in _suggestions)
+		{
+			<div class="row">
+				<div class="col">
+					@suggestion
+				</div>
+			</div>
+		}
+	</div>
+
 
 	<div class="d-flex justify-content-center pt-4">
 		<button class="btn btn-primary @(_pageNumber > 0 ? "" : "disabled")" @onclick="async () => await GoToPreviousPageAsync()">Go back</button>	
@@ -54,6 +66,7 @@
 	private bool _searchInProgress = false;
 
 	private IList<Customer> _customers = new List<Customer>();
+	private IList<string> _suggestions = new List<string>();
 	private bool _hasMore = false;
 
 	private int _pageNumber = 0;
@@ -68,7 +81,10 @@
 	private async Task OnInput(ChangeEventArgs e)
 	{
 		_pageNumber = 0;
-		await GetCustomersAsync(e.Value!.ToString());
+
+		var searchText = e.Value!.ToString();
+		_suggestions = await CompaniesService.GetSuggestedCustomersAsync(searchText);	
+		await GetCustomersAsync(searchText);
 	}
 
 	private async Task GoToNextPageAsync()
@@ -93,6 +109,7 @@
 	{
 		_pageSize = Convert.ToInt32(e.Value);
 		_pageNumber = 0;
+
 		await GetCustomersAsync(_searchText);
 	}
 
@@ -120,3 +137,6 @@
 		}
 	}
 }
+
+
+
