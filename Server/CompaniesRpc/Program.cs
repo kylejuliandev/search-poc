@@ -1,4 +1,6 @@
+using Azure;
 using CompaniesRpc.Services;
+using Microsoft.Extensions.Azure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,15 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
            .AllowAnyHeader()
            .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
 }));
+
+builder.Services.AddAzureClients(azBuilder =>
+{
+    var origin = new Uri(builder.Configuration["SearchSettings:Origin"]!);
+    var custIndex = builder.Configuration["SearchSettings:Indexes:Customer"]!;
+    var credential = new AzureKeyCredential(builder.Configuration["SearchSettings:ApiKey"]!);
+
+    azBuilder.AddSearchClient(origin, custIndex, credential).WithName("CustomerSearchClient");
+});
 
 var app = builder.Build();
 

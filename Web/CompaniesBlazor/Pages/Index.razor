@@ -1,36 +1,94 @@
 ﻿@page "/"
 @using CompaniesRpc
 @using Grpc.Core
-@inject Greeter.GreeterClient GreeterRpc
+@inject Greeter.GreeterClient GreeterClient
 
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+<input class="form-control" @bind="_searchText" @onkeydown="async (e) => await OnInput(e)" 
+	placeholder="Enter search text here"/>
 
-Welcome to your new app.
+@if (_searchInProgress)
+{
+	<br class="pt-4"/>
 
-<p>Name</p>
-<input @bind-value="@_name"></input>
-<button class="btn btn-primary" @onclick="async () => await SayHelloAsync()"></button>
+	<div class="d-flex align-items-center">
+		<strong>Loading...</strong>
+		<div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+	</div>
+}
 
-@if(_result is not null) {
-	<p>@_result</p>
+<br class="pb-4"/>
+
+@if(_customers is not null)
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<td>First Name</td>
+				<td>Last Name</td>
+				<td>Email Address</td>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var customer in _customers)
+		    {
+			    <tr>
+					<td>@customer.FirstName</td>
+					<td>@customer.LastName</td>
+					<td>@customer.EmailAddress</td>
+				</tr>
+		    }
+		</tbody>
+	</table>
 }
 
 @code {
-	private string? _name;
+	private string _searchText = string.Empty;
+	private bool _searchInProgress = false;
 
-	private string? _result;
+	private IList<CustomerRpc> _customers = new List<CustomerRpc>();
 
-	private async Task SayHelloAsync()
+	protected override async Task OnInitializedAsync()
 	{
-		var request = new HelloRequest();
-		request.Name = _name ?? "No name";
+		try
+		{
+			_searchInProgress = true;
 
-		var options = new CallOptions();
+			var request = new CustomerRequest();
+			request.SearchText = string.Empty;
 
-		var result = await GreeterRpc.SayHelloAsync(request, options);
+			var response = await GreeterClient.GetCustomersAsync(request, new CallOptions());
+			_customers.Clear();
+			_customers = response.Customers;
+		}
+		finally
+		{
+			_searchInProgress = false;
+		}
 
-		_result = result.Message;
+		await base.OnInitializedAsync();
+	}
+
+	private async Task OnInput(KeyboardEventArgs e)
+	{
+		if (e.Code == "Enter" || e.Code == "NumpadEnter" && !_searchInProgress)
+		{
+			try
+			{
+				_searchInProgress = true;
+
+				var request = new CustomerRequest();
+				request.SearchText = _searchText ?? string.Empty;
+
+				var response = await GreeterClient.GetCustomersAsync(request, new CallOptions());
+				_customers.Clear();
+				_customers = response.Customers;
+			}
+			finally
+			{
+				_searchInProgress = false;	
+			}
+		}
 	}
 }
