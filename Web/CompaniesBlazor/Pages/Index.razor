@@ -1,7 +1,5 @@
 ﻿@page "/"
-@using CompaniesRpc
-@using Grpc.Core
-@inject Greeter.GreeterClient GreeterClient
+@inject CompaniesService CompaniesService
 
 <PageTitle>Index</PageTitle>
 
@@ -55,7 +53,7 @@
 	private string _searchText = string.Empty;
 	private bool _searchInProgress = false;
 
-	private IList<CustomerRpc> _customers = new List<CustomerRpc>();
+	private IList<Customer> _customers = new List<Customer>();
 	private bool _hasMore = false;
 
 	private int _pageNumber = 0;
@@ -100,21 +98,21 @@
 
 	private async Task GetCustomersAsync(string? searchText)
 	{
+		if (_searchInProgress) return;
+
 		try
 		{
 			_searchInProgress = true;
 
-			var request = new CustomerRequest();
-			request.SearchText = string.IsNullOrEmpty(searchText) ? string.Empty : searchText;
-			request.PageSettings = new PaginationSettingsRpc();
-			request.PageSettings.PageNumber = _pageNumber;
-			request.PageSettings.PageSize = _pageSize;
+			var response = await CompaniesService.GetCustomerAsync(searchText, _pageNumber, _pageSize);
 
-			var response = await GreeterClient.GetCustomersAsync(request, new CallOptions());
-			_customers.Clear();
+			if (response is not null)
+			{
+				_customers.Clear();
 
-			_customers = response.Customers;
-			_hasMore = response.HasMore;
+				_customers = response.Customers.ToList();
+				_hasMore = response.HasMore;
+			}
 		}
 		finally
 		{
