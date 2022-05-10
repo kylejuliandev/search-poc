@@ -18,20 +18,27 @@
 		}
 	</div>
 
+	<div class="d-flex justify-content-end pt-4">
+		<select class="form-control-sm me-4" @onchange="async e => await AdjustSelectedCompanyFilter(e)">
+			<option value="-">-</option>
+			@foreach (var company in _companies)
+			{
+				<option value="@company.Id">@company.Name</option>
+			}
+		</select>
 
-	<div class="d-flex justify-content-center pt-4">
-		<button class="btn btn-primary @(_pageNumber > 0 ? "" : "disabled")" @onclick="async () => await GoToPreviousPageAsync()">Go back</button>	
-		<p class="text-center px-5">Page @(_pageNumber + 1)</p>
-		<button class="btn btn-primary @(_hasMore ? "" : "disabled")" @onclick="async () => await GoToNextPageAsync()">Next page</button>
-	</div>
-
-	<div class="d-flex justify-content-end">
 		<select class="form-control-sm" @onchange="async e => await AdjustPageSize(e)">
 			<option value="10" selected>10</option>
 			<option value="20">20</option>
 			<option value="50">50</option>
 			<option value="100">100</option>
 		</select>
+	</div>
+
+	<div class="d-flex justify-content-center pt-4">
+		<button class="btn btn-primary @(_pageNumber > 0 ? "" : "disabled")" @onclick="async () => await GoToPreviousPageAsync()">Go back</button>	
+		<p class="text-center px-5">Page @(_pageNumber + 1)</p>
+		<button class="btn btn-primary @(_hasMore ? "" : "disabled")" @onclick="async () => await GoToNextPageAsync()">Next page</button>
 	</div>
 </div>
 
@@ -66,8 +73,11 @@
 	private bool _searchInProgress = false;
 
 	private IList<Customer> _customers = new List<Customer>();
+	private IList<Company> _companies = new List<Company>();
 	private IList<string> _suggestions = new List<string>();
 	private bool _hasMore = false;
+
+	private Company? _selectedCompanyFilter = null;
 
 	private int _pageNumber = 0;
 	private int _pageSize = 10;
@@ -75,6 +85,13 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await GetCustomersAsync(_searchText);
+
+		var companies = await CompaniesService.GetCompaniesAsync();
+		if (companies is not null)
+		{
+			_companies = companies.Companies.ToList();
+		}
+
 		await base.OnInitializedAsync();
 	}
 
@@ -83,7 +100,7 @@
 		_pageNumber = 0;
 
 		var searchText = e.Value!.ToString();
-		_suggestions = await CompaniesService.GetSuggestedCustomersAsync(searchText);	
+		_suggestions = await CompaniesService.GetSuggestedCustomersAsync(searchText);
 		await GetCustomersAsync(searchText);
 	}
 
@@ -113,6 +130,15 @@
 		await GetCustomersAsync(_searchText);
 	}
 
+	private async Task AdjustSelectedCompanyFilter(ChangeEventArgs e)
+	{
+		var selectedCompany = Convert.ToString(e.Value);
+		_selectedCompanyFilter = _companies.FirstOrDefault(c => c.Id == selectedCompany);
+		_pageNumber = 0;
+
+		await GetCustomersAsync(_searchText);
+	}
+
 	private async Task GetCustomersAsync(string? searchText)
 	{
 		if (_searchInProgress) return;
@@ -121,7 +147,13 @@
 		{
 			_searchInProgress = true;
 
-			var response = await CompaniesService.GetCustomerAsync(searchText, _pageNumber, _pageSize);
+			var filters = new Dictionary<string, string>();
+			if (_selectedCompanyFilter is not null)
+			{
+				filters.Add("CompanyId", _selectedCompanyFilter.Id);
+			}
+
+			var response = await CompaniesService.GetCustomersAsync(searchText, filters, _pageNumber, _pageSize);
 
 			if (response is not null)
 			{

@@ -12,7 +12,7 @@ public class CompaniesService
         _httpClient = httpClient;
     }
 
-    public async Task<CustomerResponse?> GetCustomerAsync(string? searchText, int pageNumber, int pageSize)
+    public async Task<CustomerResponse?> GetCustomersAsync(string? searchText, IDictionary<string, string> filters, int pageNumber, int pageSize)
     {
         var queryParams = new Dictionary<string, string>();
 
@@ -22,6 +22,11 @@ public class CompaniesService
         }
         queryParams.Add("pageNumber", pageNumber.ToString());
         queryParams.Add("pageSize", pageSize.ToString());
+
+        foreach (var filter in filters)
+        {
+            queryParams.Add("filter", $"{filter.Key}|{filter.Value}");
+        }
 
         var queryString = ToQueryString(queryParams);
 
@@ -63,6 +68,21 @@ public class CompaniesService
         }
     }
 
+    public async Task<CompanyResponse?> GetCompaniesAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "api/search-company");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadFromJsonAsync<CompanyResponse>();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     private static string ToQueryString(IDictionary<string, string> queryParams)
     {
         var mappedQueryParams = queryParams.Select((kvp) => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}");
@@ -92,9 +112,21 @@ public class Customer
 
     public string EmailAddress { get; set;  }
 
-    public string OrganisationId { get; set; }
+    public string CompanyId { get; set; }
 
     public DateTime LatestConnectedOn { get; set;  }
 
     public DateTime LatestInvitedOn { get; set; }
+}
+
+public class CompanyResponse
+{
+    public IEnumerable<Company> Companies { get; set; }
+}
+
+public class Company
+{
+    public string Id { get; set; }
+
+    public string Name { get; set; }
 }

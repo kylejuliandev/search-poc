@@ -17,10 +17,13 @@ var host = new HostBuilder()
 		s.AddAzureClients(azBuilder =>
 		{
 			var origin = new Uri(builder.Configuration["SearchSettings:Origin"]!);
-			var custIndex = builder.Configuration["SearchSettings:Indexes:Customer"]!;
 			var credential = new AzureKeyCredential(builder.Configuration["SearchSettings:ApiKey"]!);
 
+			var custIndex = builder.Configuration["SearchSettings:Indexes:Customer"]!;
 			azBuilder.AddSearchClient(origin, custIndex, credential).WithName("CustomerSearchClient");
+
+			var companyIndex = builder.Configuration["SearchSettings:Indexes:Company"]!;
+			azBuilder.AddSearchClient(origin, companyIndex, credential).WithName("CompanySearchClient");
 		});
 	})
 	.Build();
