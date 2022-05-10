@@ -47,7 +47,7 @@ public class SearchCustomerFunction
         customer.FirstName,
         customer.LastName,
         customer.EmailAddress,
-        customer.OrganisationId,
+        customer.CompanyId,
         customer.LatestConnectedOn,
         customer.LatestInvitedOn);
 }

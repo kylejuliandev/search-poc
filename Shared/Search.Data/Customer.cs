@@ -4,6 +4,8 @@ namespace Search.Data;
 
 public class Customer
 {
+    public const string SuggestorName = "sg-name";
+
     [SimpleField(IsKey = true)]
     public string Id { get; set; }
 
@@ -17,7 +19,7 @@ public class Customer
     public string EmailAddress { get; set; }
 
     [SimpleField(IsFilterable = true)]
-    public string OrganisationId { get; set; }
+    public string CompanyId { get; set; }
 
     [SimpleField(IsSortable = true)]
     public DateTime LatestConnectedOn { get; set; }

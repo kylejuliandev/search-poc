@@ -28,10 +28,9 @@ public class SuggestCustomerFunction
 
         searchText = string.IsNullOrEmpty(searchText) ? "*" : searchText;
 
-        var response = await _client.SuggestAsync<Search.Data.Customer>(searchText, "sg-names", query);
-        var customers = response.Value.Results.GroupBy(r => r.Text).Select(r => r.First().Text); // Remove duplicates
+        var response = await _client.SuggestAsync<Search.Data.Customer>(searchText, Search.Data.Customer.SuggestorName, query);
 
-        var result = new SuggestCustomerResponse(customers);
+        var result = new SuggestCustomerResponse(response.Value.Results.Select(r => r.Text));
 
         return result;
     }

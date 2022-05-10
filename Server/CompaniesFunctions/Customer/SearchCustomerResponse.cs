@@ -23,20 +23,20 @@ public class Customer
 
     public string EmailAddress { get; }
 
-    public string OrganisationId { get; }
+    public string CompanyId { get; }
 
     public DateTime LatestConnectedOn { get; }
 
     public DateTime LatestInvitedOn { get; }
 
-    public Customer(string id, string firstName, string lastName, string emailAddress, string organisationId, 
+    public Customer(string id, string firstName, string lastName, string emailAddress, string companyId, 
         DateTime latestConnectedOn, DateTime latestInvitedOn)
     {
         Id = id;
         FirstName = firstName;
         LastName = lastName;
         EmailAddress = emailAddress;
-        OrganisationId = organisationId;
+        CompanyId = companyId;
         LatestConnectedOn = latestConnectedOn;
         LatestInvitedOn = latestInvitedOn;
     }
