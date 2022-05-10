@@ -11,6 +11,11 @@ var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .Build();
 
+// Company data
+var companyFaker = new Faker<Company>()
+    .RuleFor(c => c.Id, f => f.Random.Guid().ToString())
+    .RuleFor(c => c.Name, f => f.Company.CompanyName());
+
 var numOrganisations = AnsiConsole.Prompt(
     new TextPrompt<int>("How many Organisations would you like to generate?")
         .Validate(n => n switch
@@ -19,10 +24,11 @@ var numOrganisations = AnsiConsole.Prompt(
             _ => true
         }));
 
-var randomizer = new Randomizer();
-var companyIds = Enumerable.Range(0, numOrganisations).Select(i => randomizer.Guid().ToString());
+var companies = companyFaker.Generate(numOrganisations);
+var companyIds = companies.Select(c => c.Id);
 
-var faker = new Faker<Customer>()
+// Customer data
+var customerFaker = new Faker<Customer>()
     .RuleFor(c => c.Id, f => f.Random.Guid().ToString())
     .RuleFor(c => c.FirstName, f => f.Name.FirstName())
     .RuleFor(c => c.LastName, f => f.Name.LastName())
@@ -40,13 +46,18 @@ var numCustomers = AnsiConsole.Prompt(
             _ => true
         }));
 
-var customers = faker.Generate(numCustomers);
+var customers = customerFaker.Generate(numCustomers);
 
+// Loaders
 var origin = new Uri(config["SearchSettings:Origin"]!);
-var custIndex = config["SearchSettings:Indexes:Customer"]!;
 var credential = new AzureKeyCredential(config["SearchSettings:ApiKey"]!);
 
 var indexClient = new SearchIndexClient(origin, credential);
 
 var custLoader = new CustomerLoader(customers);
+var custIndex = config["SearchSettings:Indexes:Customer"]!;
 await custLoader.RunAsync(origin, credential, custIndex);
+
+var companyLoader = new CompanyLoader(companies);
+var companyIndex = config["SearchSettings:Indexes:Company"]!;
+await companyLoader.RunAsync(origin, credential, companyIndex);

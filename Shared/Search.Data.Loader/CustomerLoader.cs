@@ -1,12 +1,11 @@
 ﻿using Azure;
 using Azure.Search.Documents.Indexes;
-using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
 using Spectre.Console;
 
 namespace Search.Data.Loader;
 
-internal class CustomerLoader
+internal class CustomerLoader : LoaderBase
 {
     private readonly IReadOnlyCollection<Customer> _customers;
 
@@ -25,40 +24,14 @@ internal class CustomerLoader
             await TryRemoveIndex(indexClient, custIndex);
 
             AnsiConsole.MarkupLine("[yellow]Recreating the Customer index[/]");
-            await CreateIndex(indexClient, custIndex);
+            await CreateIndex(indexClient, custIndex, typeof(Customer), Customer.SuggestorName, 
+                new[] { nameof(Customer.FirstName), nameof(Customer.LastName) });
         }
 
         if (AnsiConsole.Ask($"Do you want to upload {_customers.Count} Customers to the Index?", true))
         {
             AnsiConsole.MarkupLine("[yellow]Indexing {0} Customer documents[/]", _customers.Count);
             await TryUploadDocuments(indexClient, custIndex);
-        }
-    }
-
-    private static async Task CreateIndex(SearchIndexClient indexClient, string custIndex)
-    {
-        var fieldBuilder = new FieldBuilder();
-        var searchFields = fieldBuilder.Build(typeof(Customer));
-        var definition = new SearchIndex(custIndex, searchFields);
-        
-        var suggester = new SearchSuggester(Customer.SuggestorName, new[] { nameof(Customer.FirstName), nameof(Customer.LastName) });
-        definition.Suggesters.Add(suggester);
-
-        await indexClient.CreateOrUpdateIndexAsync(definition);
-    }
-
-    private static async Task TryRemoveIndex(SearchIndexClient indexClient, string custIndex)
-    {
-        try
-        {
-            if (await indexClient.GetIndexAsync(custIndex) is not null)
-            {
-                await indexClient.DeleteIndexAsync(custIndex);
-            }
-        }
-        catch (RequestFailedException e) when (e.Status == 404)
-        {
-            AnsiConsole.MarkupLine("[red]Index does not exist[/]");
         }
     }
 
