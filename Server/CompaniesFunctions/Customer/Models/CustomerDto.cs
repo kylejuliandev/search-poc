@@ -1,35 +1,31 @@
-﻿namespace CompaniesFunctions.Customer;
+﻿using System.Text.Json.Serialization;
 
-public class SearchCustomerResponse
+namespace CompaniesFunctions.Customer.Models;
+
+public class CustomerDto
 {
-    public IEnumerable<Customer> Customers { get; }
-
-    public bool HasMore { get; }
-
-    public SearchCustomerResponse(IEnumerable<Customer> customers, bool hasMore)
-    {
-        Customers = customers;
-        HasMore = hasMore;
-    }
-}
-
-public class Customer
-{
+    [JsonPropertyName("id")]
     public string Id { get; }
 
+    [JsonPropertyName("firstName")]
     public string FirstName { get; }
 
+    [JsonPropertyName("lastName")]
     public string LastName { get; }
 
+    [JsonPropertyName("emailAddress")]
     public string EmailAddress { get; }
 
+    [JsonPropertyName("companyId")]
     public string CompanyId { get; }
 
+    [JsonPropertyName("latestConnectedOn")]
     public DateTime LatestConnectedOn { get; }
 
+    [JsonPropertyName("latestInvitedOn")]
     public DateTime LatestInvitedOn { get; }
 
-    public Customer(string id, string firstName, string lastName, string emailAddress, string companyId, 
+    public CustomerDto(string id, string firstName, string lastName, string emailAddress, string companyId,
         DateTime latestConnectedOn, DateTime latestInvitedOn)
     {
         Id = id;

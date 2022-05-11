@@ -36,10 +36,12 @@
 	</div>
 
 	<div class="d-flex justify-content-center pt-4">
-		<button class="btn btn-primary @(_pageNumber > 0 ? "" : "disabled")" @onclick="async () => await GoToPreviousPageAsync()">Go back</button>	
-		<p class="text-center px-5">Page @(_pageNumber + 1)</p>
+		<button class="btn btn-primary @(_pageNumber > 0 ? "" : "disabled")" @onclick="async () => await GoToPreviousPageAsync()">Go back</button>
+		<p class="text-center px-5">Page @(_pageNumber + 1) / @(Math.Ceiling((decimal)_totalCount / (decimal)_pageSize))</p>
 		<button class="btn btn-primary @(_hasMore ? "" : "disabled")" @onclick="async () => await GoToNextPageAsync()">Next page</button>
 	</div>
+
+	<p class="text-center pt-2">Total Count: <b>@(_totalCount)</b></p>
 </div>
 
 <br class="pb-4"/>
@@ -52,6 +54,7 @@
 				<td>First Name</td>
 				<td>Last Name</td>
 				<td>Email Address</td>
+				<td>Connected On</td>
 			</tr>
 		</thead>
 		<tbody>
@@ -61,6 +64,7 @@
 						<td>@context.FirstName</td>
 						<td>@context.LastName</td>
 						<td>@context.EmailAddress</td>
+						<td>@context.LatestConnectedOn</td>
 					</tr>
 				</ItemContent>
 			</Virtualize>
@@ -72,12 +76,13 @@
 	private string _searchText = string.Empty;
 	private bool _searchInProgress = false;
 
-	private IList<Customer> _customers = new List<Customer>();
-	private IList<Company> _companies = new List<Company>();
+	private IList<CustomerDto> _customers = new List<CustomerDto>();
+	private IList<CompanyDto> _companies = new List<CompanyDto>();
 	private IList<string> _suggestions = new List<string>();
 	private bool _hasMore = false;
+	private long _totalCount = 0;
 
-	private Company? _selectedCompanyFilter = null;
+	private CompanyDto? _selectedCompanyFilter = null;
 
 	private int _pageNumber = 0;
 	private int _pageSize = 10;
@@ -150,10 +155,13 @@
 			var filters = new Dictionary<string, string>();
 			if (_selectedCompanyFilter is not null)
 			{
-				filters.Add("CompanyId", _selectedCompanyFilter.Id);
+				filters.Add(nameof(CustomerDto.CompanyId), _selectedCompanyFilter.Id);
 			}
 
-			var response = await CompaniesService.GetCustomersAsync(searchText, filters, _pageNumber, _pageSize);
+			var orderBy = new Dictionary<string, string>();
+			orderBy.Add(nameof(CustomerDto.LatestConnectedOn), "desc");
+
+			var response = await CompaniesService.GetCustomersAsync(searchText, filters, orderBy, _pageNumber, _pageSize);
 
 			if (response is not null)
 			{
@@ -161,6 +169,7 @@
 
 				_customers = response.Customers.ToList();
 				_hasMore = response.HasMore;
+				_totalCount = response.TotalCount;
 			}
 		}
 		finally

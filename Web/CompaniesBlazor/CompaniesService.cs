@@ -1,5 +1,5 @@
-﻿using System.Net.Http.Json;
-using System.Web;
+﻿using CompaniesBlazor.Models;
+using System.Net.Http.Json;
 
 namespace CompaniesBlazor;
 
@@ -12,30 +12,24 @@ public class CompaniesService
         _httpClient = httpClient;
     }
 
-    public async Task<CustomerResponse?> GetCustomersAsync(string? searchText, IDictionary<string, string> filters, int pageNumber, int pageSize)
+    public async Task<SearchCustomerResponse?> GetCustomersAsync(string? searchText, IDictionary<string, string> filters, IDictionary<string, string> orderBy,
+        int pageNumber, int pageSize)
     {
-        var queryParams = new Dictionary<string, string>();
+        var requestFilters = filters.Select(kvp => new SearchRequestFilter(kvp.Key, kvp.Value)).ToArray();
+        var requestOrderBy = orderBy.Select(kvp => new SearchOrderBy(kvp.Key, kvp.Value)).ToArray();
+        var requestBody = new SearchRequestBody(searchText, pageNumber * pageSize, pageSize, 
+            requestFilters, requestOrderBy);
 
-        if (!string.IsNullOrEmpty(searchText))
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/search-customer")
         {
-            queryParams.Add("searchText", searchText);
-        }
-        queryParams.Add("pageNumber", pageNumber.ToString());
-        queryParams.Add("pageSize", pageSize.ToString());
+            Content = JsonContent.Create(requestBody)
+        };
 
-        foreach (var filter in filters)
-        {
-            queryParams.Add("filter", $"{filter.Key}|{filter.Value}");
-        }
-
-        var queryString = ToQueryString(queryParams);
-
-        var request = new HttpRequestMessage(HttpMethod.Get, $"api/search-customer{queryString}");
         var response = await _httpClient.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<CustomerResponse>();
+            return await response.Content.ReadFromJsonAsync<SearchCustomerResponse>();
         }
         else
         {
@@ -47,14 +41,11 @@ public class CompaniesService
     {
         if (string.IsNullOrEmpty(searchText)) return Array.Empty<string>();
 
-        var queryParams = new Dictionary<string, string>
+        var requestBody = new SuggestRequestBody(searchText);
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/suggest-customer")
         {
-            { "searchText", searchText }
+            Content = JsonContent.Create(requestBody)
         };
-
-        var queryString = ToQueryString(queryParams);
-
-        var request = new HttpRequestMessage(HttpMethod.Get, $"api/suggest-customer{queryString}");
         var response = await _httpClient.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
@@ -68,65 +59,22 @@ public class CompaniesService
         }
     }
 
-    public async Task<CompanyResponse?> GetCompaniesAsync()
+    public async Task<SearchCompanyResponse?> GetCompaniesAsync()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "api/search-company");
+        var requestBody = new SearchRequestBody("8", 0, 10, Array.Empty<SearchRequestFilter>(), Array.Empty<SearchOrderBy>());
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/search-company")
+        {
+            Content = JsonContent.Create(requestBody)
+        };
         var response = await _httpClient.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<CompanyResponse>();
+            return await response.Content.ReadFromJsonAsync<SearchCompanyResponse>();
         }
         else
         {
             return null;
         }
     }
-
-    private static string ToQueryString(IDictionary<string, string> queryParams)
-    {
-        var mappedQueryParams = queryParams.Select((kvp) => $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}");
-        return "?" + string.Join("&", mappedQueryParams);
-    }
-}
-
-public class CustomerResponse
-{
-    public IEnumerable<Customer> Customers { get; set; }
-
-    public bool HasMore { get; set; }
-}
-
-public class SuggestCustomerResponse
-{
-    public IEnumerable<string> SuggestedCustomers { get; set; }
-}
-
-public class Customer
-{
-    public string Id { get; set;  }
-
-    public string FirstName { get; set; }
-
-    public string LastName { get; set; }
-
-    public string EmailAddress { get; set;  }
-
-    public string CompanyId { get; set; }
-
-    public DateTime LatestConnectedOn { get; set;  }
-
-    public DateTime LatestInvitedOn { get; set; }
-}
-
-public class CompanyResponse
-{
-    public IEnumerable<Company> Companies { get; set; }
-}
-
-public class Company
-{
-    public string Id { get; set; }
-
-    public string Name { get; set; }
 }

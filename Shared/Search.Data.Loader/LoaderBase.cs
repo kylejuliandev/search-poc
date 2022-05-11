@@ -28,6 +28,18 @@ internal class LoaderBase
         var searchFields = fieldBuilder.Build(entityType);
         var definition = new SearchIndex(indexName, searchFields);
 
+        var customTokenizer = new NGramTokenizer("ngram-custom-tokenizer")
+        {
+            MinGram = 1,
+            MaxGram = 2
+        };
+        customTokenizer.TokenChars.Add(TokenCharacterKind.Letter);
+        definition.Tokenizers.Add(customTokenizer);        
+
+        var analyzer = new CustomAnalyzer("lucence-custom-analyzer", "ngram-custom-tokenizer");
+        analyzer.TokenFilters.Add(TokenFilterName.Lowercase);
+        definition.Analyzers.Add(analyzer);
+
         var suggester = new SearchSuggester(suggestorName, suggestorFields);
         definition.Suggesters.Add(suggester);
 

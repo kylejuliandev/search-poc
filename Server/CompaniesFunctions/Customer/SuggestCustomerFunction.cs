@@ -1,7 +1,9 @@
 ﻿using Azure.Search.Documents;
+using CompaniesFunctions.Customer.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Azure;
+using System.Text.Json;
 
 namespace CompaniesFunctions.Customer;
 
@@ -16,22 +18,18 @@ public class SuggestCustomerFunction
 
     [Function("suggest-customer")]
     public async Task<SuggestCustomerResponse> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestData req)
     {
-        var queryDict = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
-        var searchText = queryDict.Get("searchText") ?? string.Empty;
+        var data = await JsonSerializer.DeserializeAsync<SuggestRequestBody>(req.Body);
+        if (data is null) return new SuggestCustomerResponse(Array.Empty<string>());
 
         var query = new SuggestOptions
         {
             Size = 5
         };
 
-        searchText = string.IsNullOrEmpty(searchText) ? "*" : searchText;
+        var response = await _client.SuggestAsync<Search.Data.Customer>(data.SearchText, Search.Data.Customer.SuggestorName, query);
 
-        var response = await _client.SuggestAsync<Search.Data.Customer>(searchText, Search.Data.Customer.SuggestorName, query);
-
-        var result = new SuggestCustomerResponse(response.Value.Results.Select(r => r.Text));
-
-        return result;
+        return new SuggestCustomerResponse(response.Value.Results.Select(r => r.Text));
     }
 }

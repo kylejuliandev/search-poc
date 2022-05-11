@@ -55,7 +55,7 @@ internal class CustomerLoader : LoaderBase
                 _customers.Count - processedCount);
 
             var batch = IndexDocumentsBatch.Create<Customer>(entitesToProcess);
-
+            
             try
             {
                 await searchClient.IndexDocumentsAsync(batch);

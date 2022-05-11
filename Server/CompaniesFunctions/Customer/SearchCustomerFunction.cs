@@ -1,8 +1,9 @@
 ﻿using Azure.Search.Documents;
+using CompaniesFunctions.Customer.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Azure;
-using System.Text;
+using System.Text.Json;
 
 namespace CompaniesFunctions.Customer;
 
@@ -17,60 +18,60 @@ public class SearchCustomerFunction
 
     [Function("search-customer")]
     public async Task<SearchCustomerResponse> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestData req)
 	{
-        var queryDict = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
-        var pageNumber = Convert.ToInt32(queryDict.Get("pageNumber") ?? "0");
-        var pageSize = Convert.ToInt32(queryDict.Get("pageSize") ?? "0");
-        var searchText = queryDict.Get("searchText") ?? string.Empty;
-        var filters = queryDict.Get("filter");
+        var data = await JsonSerializer.DeserializeAsync<SearchRequestBody>(req.Body);
+        if (data is null) return new SearchCustomerResponse(Array.Empty<CustomerDto>(), false, 0);
 
         var query = new SearchOptions
         {
-            Size = pageSize + 1,
-            Skip = pageNumber * pageSize,
-            QueryType = Azure.Search.Documents.Models.SearchQueryType.Simple
+            Size = data.Size + 1,
+            Skip = data.Skip,
+            IncludeTotalCount = true,
+            Filter = CreateFilterExpression(data.Filters)
         };
 
-        if (filters is not null)
+        foreach (var orderBy in data.OrderBy)
         {
-            var filterBuilder = new List<string>();
-            foreach (var filterKvp in filters.Split(','))
+            var field = orderBy.Field;
+            var direction = orderBy.Direction;
+
+            if (!string.IsNullOrEmpty(field) && !string.IsNullOrEmpty(direction))
             {
-                var filterMap = filterKvp.Split('|');
-                var filterKey = filterMap[0];
-                var filterValue = filterMap[1];
-
-                var property = filterKey switch
-                {
-                    nameof(Customer.CompanyId) => nameof(Customer.CompanyId),
-                    _ => null
-                };
-
-                if (property is not null)
-                {
-                    filterBuilder.Add($"{property} eq '{filterValue}'");
-                }
+                query.OrderBy.Add($"{field} {direction}");
             }
-
-            var filterString = string.Join(" and ", filterBuilder);
-            query.Filter = filterString;
         }
 
-        searchText = string.IsNullOrEmpty(searchText) ? "*" : searchText;
-
-        var response = await _client.SearchAsync<Search.Data.Customer>(searchText, query);
+        var response = await _client.SearchAsync<Search.Data.Customer>(data.SearchText ?? "*", query);
         var customers = await response.Value.GetResultsAsync()
-            .Take(pageSize)
             .Select(c => ToCustomer(c.Document))
             .ToArrayAsync();
 
-        return new SearchCustomerResponse(
-            customers,
-            customers.Length > pageSize);
+        return new SearchCustomerResponse(customers.Take(data.Size), customers.Length > data.Size, response.Value.TotalCount ?? 0);
     }
 
-    private static Customer ToCustomer(Search.Data.Customer customer) => new(
+    public static string? CreateFilterExpression(IReadOnlyCollection<SearchRequestFilter> filters)
+    {
+        if (filters is null || filters.Count <= 0) return null;
+
+        var filterExpressions = new List<string>();
+
+        var companyFilters = filters.Where(f => f.Field is not null and "CompanyId");
+        var companyFilterValues = companyFilters.Where(v => v.Value is not null).Select(f => f.Value);
+
+        if (companyFilterValues.Any())
+        {
+            var filterStr = string.Join(",", companyFilterValues);
+            filterExpressions.Add($"search.in({nameof(CustomerDto.CompanyId)}, '{filterStr}', ',')");
+        }
+
+        var result = string.Join(" and ", filterExpressions);
+        Console.WriteLine(result);
+
+        return result;
+    }
+
+    private static CustomerDto ToCustomer(Search.Data.Customer customer) => new(
         customer.Id,
         customer.FirstName,
         customer.LastName,
