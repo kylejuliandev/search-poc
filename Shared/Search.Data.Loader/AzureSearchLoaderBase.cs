@@ -5,7 +5,7 @@ using Spectre.Console;
 
 namespace Search.Data.Loader;
 
-internal class LoaderBase
+internal class AzureSearchLoaderBase
 {
     protected static async Task TryRemoveIndex(SearchIndexClient indexClient, string indexName)
     {

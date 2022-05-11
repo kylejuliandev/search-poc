@@ -3,6 +3,7 @@ using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Bogus;
 using Microsoft.Extensions.Configuration;
+using Nest;
 using Search.Data;
 using Search.Data.Loader;
 using Spectre.Console;
@@ -18,6 +19,7 @@ var companyFaker = new Faker<Company>()
 
 var numOrganisations = AnsiConsole.Prompt(
     new TextPrompt<int>("How many Organisations would you like to generate?")
+        .DefaultValue(6)
         .Validate(n => n switch
         {
             < 0 => false,
@@ -41,6 +43,7 @@ var customerFaker = new Faker<Customer>()
 
 var numCustomers = AnsiConsole.Prompt(
     new TextPrompt<int>("How many Customers would you like to generate?")
+        .DefaultValue(100)
         .Validate(n => n switch
         {
             < 0 => false,
@@ -51,15 +54,33 @@ var numCustomers = AnsiConsole.Prompt(
 var customers = customerFaker.Generate(numCustomers);
 
 // Loaders
-var origin = new Uri(config["SearchSettings:Origin"]!);
-var credential = new AzureKeyCredential(config["SearchSettings:ApiKey"]!);
 
-var indexClient = new SearchIndexClient(origin, credential);
+if (AnsiConsole.Ask("Do you wish to you Azure Cognitive Search?", false))
+{
+    var azureSearchOrigin = new Uri(config["SearchSettings:Azure:Origin"]!);
+    var azureSearchCredential = new AzureKeyCredential(config["SearchSettings:Azure:ApiKey"]!);
 
-var custLoader = new CustomerLoader(customers);
-var custIndex = config["SearchSettings:Indexes:Customer"]!;
-await custLoader.RunAsync(origin, credential, custIndex);
+    var indexClient = new SearchIndexClient(azureSearchOrigin, azureSearchCredential);
 
-var companyLoader = new CompanyLoader(companies);
-var companyIndex = config["SearchSettings:Indexes:Company"]!;
-await companyLoader.RunAsync(origin, credential, companyIndex);
+    var custLoader = new AzureSearchCustomerLoader(customers);
+    var custIndex = config["SearchSettings:Azure:Indexes:Customer"]!;
+    await custLoader.RunAsync(azureSearchOrigin, azureSearchCredential, custIndex);
+
+    var companyLoader = new AzureSearchCompanyLoader(companies);
+    var companyIndex = config["SearchSettings:Azure:Indexes:Company"]!;
+    await companyLoader.RunAsync(azureSearchOrigin, azureSearchCredential, companyIndex);
+}
+
+if (AnsiConsole.Ask("Do you wish to use Elasticsearch?", false))
+{
+    var elasticSearchOrigin = new Uri(config["SearchSettings:Elastic:Origin"]!);
+
+    var settings = new ConnectionSettings(elasticSearchOrigin)
+        .CertificateFingerprint(config["SearchSettings:Elastic:CertificateFingerprint"]!)
+        .BasicAuthentication(config["SearchSettings:Elastic:Username"]!, config["SearchSettings:Elastic:Password"]!);
+
+    var client = new ElasticClient(settings);
+
+    var companyLoader = new ElasticSearchCompanyLoader(companies);
+    await companyLoader.RunAsync(client);
+}

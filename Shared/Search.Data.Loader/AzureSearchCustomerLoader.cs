@@ -5,11 +5,11 @@ using Spectre.Console;
 
 namespace Search.Data.Loader;
 
-internal class CustomerLoader : LoaderBase
+internal class AzureSearchCustomerLoader : AzureSearchLoaderBase
 {
     private readonly IReadOnlyCollection<Customer> _customers;
 
-    public CustomerLoader(IReadOnlyCollection<Customer> customers)
+    public AzureSearchCustomerLoader(IReadOnlyCollection<Customer> customers)
     {
         _customers = customers;
     }
