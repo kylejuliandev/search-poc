@@ -14,20 +14,30 @@ internal class ElasticSearchCompanyLoader
 
     public async Task RunAsync(ElasticClient client)
     {
-        var exists = await client.Indices.ExistsAsync("company");
-
-        if (exists.Exists)
+        if (AnsiConsole.Ask("Do you want to remove the Customer index?", true))
         {
-            AnsiConsole.MarkupLine("[yellow]Removing Company index[/]");
-            await client.Indices.DeleteAsync("company");
+            var exists = await client.Indices.ExistsAsync("company");
+
+            if (exists.Exists)
+            {
+                AnsiConsole.MarkupLine("[yellow]Removing Company index[/]");
+                await client.Indices.DeleteAsync("company");
+            }
+
+            AnsiConsole.MarkupLine("[yellow]Recreating Company index[/]");
+            await client.Indices.CreateAsync("company", esc =>
+                esc.Map<Company>(c =>
+                    c.Properties(prop => prop
+                        .Keyword(t => t.Name(nameof(Company.Id)))
+                        .Text(t => t.Name(nameof(Company.Name)))
+                    )
+                ));
         }
 
-        AnsiConsole.MarkupLine("[yellow]Recreating Company index[/]");
-        await client.Indices.CreateAsync("company", esc =>
-            esc.Map<Company>(c =>
-                c.AutoMap()));
-
-        AnsiConsole.MarkupLine("[yellow]Indexing {0} Companies[/]", _companies.Count);
-        await client.IndexManyAsync(_companies, "company");
+        if (AnsiConsole.Ask($"Do you want to upload {_companies.Count} Companies to the Index?", true))
+        {
+            AnsiConsole.MarkupLine("[yellow]Indexing {0} Companies[/]", _companies.Count);
+            await client.IndexManyAsync(_companies, "company");
+        }
     }
 }

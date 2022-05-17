@@ -71,7 +71,7 @@ if (AnsiConsole.Ask("Do you wish to you Azure Cognitive Search?", false))
     await companyLoader.RunAsync(azureSearchOrigin, azureSearchCredential, companyIndex);
 }
 
-if (AnsiConsole.Ask("Do you wish to use Elasticsearch?", false))
+if (AnsiConsole.Ask("Do you wish to use Elasticsearch?", true))
 {
     var elasticSearchOrigin = new Uri(config["SearchSettings:Elastic:Origin"]!);
 
@@ -80,6 +80,9 @@ if (AnsiConsole.Ask("Do you wish to use Elasticsearch?", false))
         .BasicAuthentication(config["SearchSettings:Elastic:Username"]!, config["SearchSettings:Elastic:Password"]!);
 
     var client = new ElasticClient(settings);
+
+    var customerLoader = new ElasticSearchCustomerLoader(customers);
+    await customerLoader.RunAsync(client);
 
     var companyLoader = new ElasticSearchCompanyLoader(companies);
     await companyLoader.RunAsync(client);
