@@ -1,5 +1,5 @@
 ﻿using Azure.Search.Documents;
-using CompaniesFunctions.Customer.Models;
+using CompaniesFunctions.Company.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Azure;

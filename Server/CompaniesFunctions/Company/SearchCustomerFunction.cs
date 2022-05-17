@@ -5,7 +5,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Azure;
 using System.Text.Json;
 
-namespace CompaniesFunctions.Customer;
+namespace CompaniesFunctions.Company;
 
 public class SearchCustomerFunction
 {
@@ -19,7 +19,7 @@ public class SearchCustomerFunction
     [Function("search-customer")]
     public async Task<SearchCustomerResponse> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestData req)
-	{
+    {
         var data = await JsonSerializer.DeserializeAsync<SearchRequestBody>(req.Body);
         if (data is null) return new SearchCustomerResponse(Array.Empty<CustomerDto>(), false, 0);
 

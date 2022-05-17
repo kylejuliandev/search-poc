@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CompaniesFunctions.Customer.Models;
+namespace CompaniesFunctions.Company.Models;
 
 public class CompanyDto
 {
