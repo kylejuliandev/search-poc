@@ -20,7 +20,7 @@ public class CompaniesService
         var requestBody = new SearchRequestBody(searchText, pageNumber * pageSize, pageSize, 
             requestFilters, requestOrderBy);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/search-customer")
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/azure-search-customer")
         {
             Content = JsonContent.Create(requestBody)
         };
@@ -42,7 +42,7 @@ public class CompaniesService
         if (string.IsNullOrEmpty(searchText)) return Array.Empty<string>();
 
         var requestBody = new SuggestRequestBody(searchText);
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/suggest-customer")
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/azure-suggest-customer")
         {
             Content = JsonContent.Create(requestBody)
         };
@@ -62,7 +62,7 @@ public class CompaniesService
     public async Task<SearchCompanyResponse?> GetCompaniesAsync()
     {
         var requestBody = new SearchRequestBody("8", 0, 10, Array.Empty<SearchRequestFilter>(), Array.Empty<SearchOrderBy>());
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/search-company")
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/azure-search-company")
         {
             Content = JsonContent.Create(requestBody)
         };

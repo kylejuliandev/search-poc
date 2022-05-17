@@ -7,16 +7,16 @@ using System.Text.Json;
 
 namespace CompaniesFunctions.Customer;
 
-public class SuggestCustomerFunction
+public class AzureSuggestCustomerFunction
 {
     private readonly SearchClient _client;
 
-    public SuggestCustomerFunction(IAzureClientFactory<SearchClient> searchFactory)
+    public AzureSuggestCustomerFunction(IAzureClientFactory<SearchClient> searchFactory)
     {
         _client = searchFactory.CreateClient("CustomerSearchClient");
     }
 
-    [Function("suggest-customer")]
+    [Function("azure-suggest-customer")]
     public async Task<SuggestCustomerResponse> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequestData req)
     {
