@@ -155,11 +155,11 @@
 			var filters = new Dictionary<string, string>();
 			if (_selectedCompanyFilter is not null)
 			{
-				filters.Add(nameof(CustomerDto.CompanyId), _selectedCompanyFilter.Id);
+				filters.Add("companyId", _selectedCompanyFilter.Id);
 			}
 
 			var orderBy = new Dictionary<string, string>();
-			orderBy.Add(nameof(CustomerDto.LatestConnectedOn), "desc");
+			orderBy.Add("latestConnectedOn", "desc");
 
 			var response = await CompaniesService.GetCustomersAsync(searchText, filters, orderBy, _pageNumber, _pageSize);
 

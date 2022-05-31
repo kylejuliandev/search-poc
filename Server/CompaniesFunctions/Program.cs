@@ -1,7 +1,9 @@
 using Azure;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nest;
 
 var host = new HostBuilder()
 	.ConfigureFunctionsWorkerDefaults()
@@ -25,7 +27,21 @@ var host = new HostBuilder()
 			var companyIndex = builder.Configuration["SearchSettings:Azure:Indexes:Company"]!;
 			azBuilder.AddSearchClient(origin, companyIndex, credential).WithName("CompanySearchClient");
 		});
-	})
+
+		s.AddTransient(c =>
+		{
+			var elasticSearchOrigin = new Uri(builder.Configuration["SearchSettings:Elastic:Origin"]!);
+			var certificateFingerprint = builder.Configuration["SearchSettings:Elastic:CertificateFingerprint"]!;
+			var elasticUser = builder.Configuration["SearchSettings:Elastic:Username"]!;
+			var elasticPassword = builder.Configuration["SearchSettings:Elastic:Password"]!;
+
+			var settings = new ConnectionSettings(elasticSearchOrigin)
+				.CertificateFingerprint(certificateFingerprint)
+				.BasicAuthentication(elasticUser, elasticPassword);
+
+			return new ElasticClient(settings);
+		});
+    })
 	.Build();
 
 await host.RunAsync();

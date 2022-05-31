@@ -13,14 +13,8 @@ public class Customer
     [SearchableField(IsFilterable = true, IsSortable = true)]
     public string FirstName { get; set; }
 
-    [SearchableField(AnalyzerName = "lucence-custom-analyzer")]
-    public string FirstNamePartial { get; set; }
-
     [SearchableField(IsFilterable = true, IsSortable = true)]
     public string LastName { get; set; }
-
-    [SearchableField(AnalyzerName = "lucence-custom-analyzer")]
-    public string LastNamePatial { get; set; }
 
     [SearchableField(IsFilterable = true, IsSortable = true)]
     public string EmailAddress { get; set; }

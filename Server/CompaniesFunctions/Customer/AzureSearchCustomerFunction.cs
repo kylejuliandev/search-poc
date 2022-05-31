@@ -5,7 +5,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Azure;
 using System.Text.Json;
 
-namespace CompaniesFunctions.Company;
+namespace CompaniesFunctions.Customer;
 
 public class AzureSearchCustomerFunction
 {

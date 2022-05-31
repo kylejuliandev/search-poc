@@ -28,13 +28,13 @@ internal class ElasticSearchCustomerLoader
             await client.Indices.CreateAsync("customer", esc =>
                 esc.Map<Customer>(c => c
                     .Properties(prop => prop
-                        .Keyword(t => t.Name(nameof(Customer.Id)))
-                        .Text(t => t.Name(nameof(Customer.FirstName)))
-                        .Text(t => t.Name(nameof(Customer.LastName)))
-                        .Keyword(t => t.Name(nameof(Customer.EmailAddress)))
-                        .Keyword(t => t.Name(nameof(Customer.CompanyId)))
-                        .Date(t => t.Name(nameof(Customer.LatestInvitedOn)))
-                        .Date(t => t.Name(nameof(Customer.LatestConnectedOn)))
+                        .Keyword(t => t.Name(c => c.Id))
+                        .SearchAsYouType(t => t.Name(c => c.FirstName))
+                        .SearchAsYouType(t => t.Name(c => c.LastName))
+                        .Keyword(t => t.Name(c => c.EmailAddress))
+                        .Keyword(t => t.Name(c => c.CompanyId))
+                        .Date(t => t.Name(c => c.LatestInvitedOn))
+                        .Date(t => t.Name(c => c.LatestConnectedOn))
                     )
                 ));
         }
